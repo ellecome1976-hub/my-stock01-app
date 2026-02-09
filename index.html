@@ -3,39 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>나의주식비서 (Pro)</title>
+    <title>나의주식비서 (Ver 3.5)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 기본 스타일 */
-        body { font-family: 'Pretendard', sans-serif; background-color: #000; color: #fff; margin: 0; padding: 20px; line-height: 1.6; }
-        h1 { text-align: center; color: #4dabf7; margin-bottom: 20px; }
+        /* 스타일 정의 */
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; background-color: #000; color: #fff; margin: 0; padding: 20px; line-height: 1.6; }
+        h1 { text-align: center; color: #4dabf7; margin-bottom: 20px; font-weight: 800; }
         
-        .tab-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; }
-        .tab-btn { background: #333; border: 1px solid #555; color: #ccc; padding: 10px 20px; border-radius: 20px; cursor: pointer; transition: 0.3s; }
-        .tab-btn.active { background: #4dabf7; color: #000; font-weight: bold; }
+        /* 탭 메뉴 스타일 */
+        .tab-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
+        .tab-btn { background: #1e1e1e; border: 1px solid #333; color: #888; padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: 0.3s; font-size: 0.9em; }
+        .tab-btn.active { background: #4dabf7; color: #000; font-weight: bold; border-color: #4dabf7; }
+        .tab-btn.suhyun-btn { border-color: #d63384; color: #d63384; } /* 수현 탭 전용 색상 */
+        .tab-btn.suhyun-btn.active { background: #d63384; color: #fff; }
 
         .card { background-color: #1c1c1e; border-radius: 18px; padding: 20px; margin-bottom: 15px; border: 1px solid #333; }
-        .card-header { font-size: 1.1em; font-weight: bold; margin-bottom: 15px; color: #868e96; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .card-header { font-size: 1.1em; font-weight: bold; margin-bottom: 15px; color: #ced4da; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         
         /* 새로고침 버튼 */
         .refresh-btn { font-size: 0.8em; color: #4dabf7; cursor: pointer; border: 1px solid #4dabf7; padding: 4px 10px; border-radius: 15px; }
 
-        /* 수정 가능한 자산 스타일 (강조) */
-        .editable { color: #ffd43b; text-decoration: underline; text-decoration-style: dotted; cursor: pointer; }
-        .editable:hover { color: #fff; }
+        /* 수정 가능한 자산 (노란 점선) */
+        .editable { color: #ffd43b; text-decoration: underline; text-decoration-style: dotted; cursor: pointer; font-weight: bold; }
         
         .stock-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2c2c2e; }
         .stock-price { font-weight: bold; color: #ff6b6b; }
-        .total-asset { font-size: 2em; font-weight: bold; text-align: center; margin: 10px 0; }
+        .total-asset { font-size: 2.2em; font-weight: bold; text-align: center; margin: 15px 0; letter-spacing: -1px; }
         .update-time { text-align: center; font-size: 0.8em; color: #555; margin-bottom: 20px; }
-        .status-msg { text-align: center; color: #888; font-size: 0.9em; padding: 20px; }
+        .status-msg { text-align: center; color: #666; font-size: 0.9em; padding: 20px; }
 
-        /* 뉴스 스타일 */
+        /* 뉴스 리스트 */
         .news-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #333; }
         .news-link { text-decoration: none; color: inherit; display: block; }
-        .news-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7em; margin-bottom: 5px; background: #fa5252; color: white; }
-        .news-title { font-size: 1em; font-weight: bold; margin-bottom: 5px; color: #e9ecef; }
-        .ai-analysis { font-size: 0.8em; color: #888; }
+        .news-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7em; margin-bottom: 6px; background: #e03131; color: white; font-weight: bold; }
+        .news-title { font-size: 1.05em; font-weight: bold; margin-bottom: 5px; color: #e9ecef; }
+        .ai-analysis { font-size: 0.8em; color: #888; display: flex; align-items: center; }
+
+        /* 수현 탭 디자인 */
+        .suhyun-box { text-align: center; padding: 30px 10px; }
+        .suhyun-icon { font-size: 3em; margin-bottom: 15px; }
+        .suhyun-desc { color: #adb5bd; margin-bottom: 25px; }
+        .chat-link-btn { display: inline-block; background: linear-gradient(45deg, #d63384, #ae3ec9); color: white; padding: 15px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1em; box-shadow: 0 4px 15px rgba(214, 51, 132, 0.4); }
     </style>
 </head>
 <body>
@@ -45,6 +53,7 @@
     <div class="tab-container">
         <button class="tab-btn active" onclick="openTab('dashboard')">자산현황</button>
         <button class="tab-btn" onclick="openTab('news')">자동 뉴스</button>
+        <button class="tab-btn suhyun-btn" onclick="openTab('suhyun')">비서 수현</button>
     </div>
 
     <div id="dashboard" class="content">
@@ -56,7 +65,7 @@
             <div class="total-asset" id="totalMoney">계산 중...</div>
             <div class="update-time" id="lastUpdated">최근 갱신: 확인 중...</div>
             
-            <div style="height: 200px; display: flex; justify-content: center;">
+            <div style="height: 220px; display: flex; justify-content: center;">
                 <canvas id="assetChart"></canvas>
             </div>
         </div>
@@ -72,6 +81,9 @@
             <div class="stock-item">
                 <span>현금/적금</span>
                 <span class="stock-price editable" id="cashVal" onclick="editAsset('cash')">0원</span>
+            </div>
+            <div class="stock-item">
+                <span>기타 자산</span> <span class="stock-price editable" id="otherVal" onclick="editAsset('other')">0원</span>
             </div>
         </div>
 
@@ -94,60 +106,68 @@
         </div>
     </div>
 
+    <div id="suhyun" class="content" style="display:none;">
+        <div class="card">
+            <div class="card-header">👩‍💼 수현 (AI 비서)</div>
+            <div class="suhyun-box">
+                <div class="suhyun-icon">✨</div>
+                <p class="suhyun-desc">
+                    안녕하세요, 사장님!<br>
+                    시장 분석이나 자산 조언이 필요하신가요?<br>
+                    언제든 저를 불러주세요.
+                </p>
+                <a href="https://gemini.google.com/app" target="_blank" class="chat-link-btn">
+                    수현이와 대화하기 ➤
+                </a>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 사장님의 CSV 주소 (변경 없음)
+        // 사장님의 CSV 주소
         const STOCK_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRCRj74JyE0gUyQs4yWYXg__QxuOYpDiegz8W50mvORtk5x9I_KMYtZJOYwYOWpp6bZhPFBkQmmvc6/pub?gid=2144469712&single=true&output=csv";
         const NEWS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRCRj74JyE0gUyQs4yWYXg__QxuOYpDiegz8W50mvORtk5x9I_KMYtZJOYwYOWpp6bZhPFBkQmmvc6/pub?gid=0&single=true&output=csv";
         
-        // 전역 변수 (주식 합계 저장용)
         let currentStockTotal = 0;
 
-        // 1. 저장된 자산 불러오기 (시작하자마자 실행)
+        // 1. 자산 불러오기 (기타 자산 추가됨)
         function loadSavedAssets() {
-            // 저장된 값이 없으면 기본값 0원
             let estate = localStorage.getItem('myEstate') || "0";
             let cash = localStorage.getItem('myCash') || "0";
+            let other = localStorage.getItem('myOther') || "0"; // 기타 추가
             
-            // 화면에 표시
             document.getElementById('estateVal').innerText = Number(estate).toLocaleString() + "원";
             document.getElementById('cashVal').innerText = Number(cash).toLocaleString() + "원";
+            document.getElementById('otherVal').innerText = Number(other).toLocaleString() + "원";
         }
 
-        // 2. 자산 수정하기 (터치 시 실행)
+        // 2. 자산 수정하기
         function editAsset(type) {
-            let currentVal = type === 'estate' ? localStorage.getItem('myEstate') : localStorage.getItem('myCash');
-            // 입력창 띄우기
-            let newVal = prompt("수정할 금액을 입력하세요 (숫자만)", currentVal || "0");
+            let key = type === 'estate' ? 'myEstate' : (type === 'cash' ? 'myCash' : 'myOther');
+            let currentVal = localStorage.getItem(key);
+            
+            let label = type === 'other' ? "기타 자산" : "금액";
+            let newVal = prompt(label + "을 입력하세요 (숫자만)", currentVal || "0");
 
             if (newVal !== null && !isNaN(newVal) && newVal.trim() !== "") {
-                // 저장 (내 폰에 저장됨)
-                if (type === 'estate') localStorage.setItem('myEstate', newVal);
-                if (type === 'cash') localStorage.setItem('myCash', newVal);
-                
-                // 화면 갱신
+                localStorage.setItem(key, newVal);
                 loadSavedAssets();
-                // 총 자산 다시 계산
                 updateTotalDisplay();
             }
         }
 
-        // 3. 총 자산 계산 및 차트 그리기
+        // 3. 총 자산 계산 (기타 자산 포함)
         function updateTotalDisplay() {
             let estate = Number(localStorage.getItem('myEstate') || 0);
             let cash = Number(localStorage.getItem('myCash') || 0);
-            let fixedAssets = estate + cash;
+            let other = Number(localStorage.getItem('myOther') || 0);
+            let fixedAssets = estate + cash + other;
             
             let grandTotal = currentStockTotal + fixedAssets;
 
             document.getElementById('totalMoney').innerText = "₩ " + grandTotal.toLocaleString();
-            
-            // 차트 갱신
             drawChart(currentStockTotal, fixedAssets);
         }
-
-        // ==========================================
-        // 아래는 기존 주식/뉴스 로딩 로직과 동일
-        // ==========================================
 
         function forceReload() {
             document.getElementById('totalMoney').innerText = "갱신 중...";
@@ -165,14 +185,16 @@
                 const now = new Date();
                 document.getElementById('lastUpdated').innerText = "최근 갱신: " + now.toLocaleTimeString();
             } catch (e) {
-                document.getElementById('stockList').innerHTML = '<div class="status-msg">⚠️ 연결 실패</div>';
+                document.getElementById('stockList').innerHTML = '<div class="status-msg">⚠️ 주식 데이터 연결 실패</div>';
             }
 
             try {
                 const res = await fetch(NEWS_URL + timeStamp);
                 const text = await res.text();
                 renderNews(parseCSV(text));
-            } catch (e) {}
+            } catch (e) {
+                console.log("뉴스 로딩 대기");
+            }
         }
 
         function parseCSV(text) {
@@ -208,26 +230,31 @@
                 }
             });
 
-            // 주식 합계를 전역 변수에 저장
             currentStockTotal = totalVal;
-            // 화면 갱신 호출
             updateTotalDisplay();
         }
 
+        // [뉴스 오류 수정] 헤더 제거 로직 추가
         function renderNews(rows) {
             const list = document.getElementById('newsList');
             list.innerHTML = "";
-            rows.slice(0, 15).forEach(row => {
-                let title = row[0]; let link = row[1];
-                if (!title) return;
-                if (title.length > 38) title = title.substring(0, 38) + "...";
+            
+            rows.forEach(row => {
+                let title = row[0]; 
+                let link = row[1];
+                
+                // 오류 방지: 제목이 없거나, 엑셀 헤더(items title 등)인 경우 무시
+                if (!title || title === "items title" || title === "태그") return;
+
+                if (title.length > 40) title = title.substring(0, 40) + "...";
                 if (!link) link = "#";
+
                 list.innerHTML += `
                     <div class="news-item">
                         <a href="${link}" target="_blank" class="news-link">
                             <span class="news-tag">LIVE</span>
                             <div class="news-title">${title}</div>
-                            <div class="ai-analysis">👉 터치하여 기사 보기</div>
+                            <div class="ai-analysis">👉 터치하여 기사 원문 보기</div>
                         </a>
                     </div>`;
             });
@@ -255,9 +282,7 @@
             event.target.classList.add('active');
         }
 
-        // 앱 켜질 때 저장된 값 먼저 불러오기
         loadSavedAssets();
-        // 그 다음 데이터 가져오기
         loadData();
 
     </script>
