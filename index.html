@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>나의주식비서 (Ver 3.6)</title>
+    <title>나의주식비서 (Ver 3.7)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* 기본 스타일 */
@@ -23,17 +23,15 @@
         .refresh-btn { font-size: 0.8em; color: #4dabf7; cursor: pointer; border: 1px solid #4dabf7; padding: 4px 10px; border-radius: 15px; }
         .editable { color: #ffd43b; text-decoration: underline; text-decoration-style: dotted; cursor: pointer; font-weight: bold; }
         
-        /* 주식 리스트 스타일 (등락률 추가됨) */
+        /* 주식 리스트 스타일 */
         .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2c2c2e; }
         .stock-info { display: flex; flex-direction: column; }
         .stock-name { font-weight: bold; font-size: 1em; }
         .stock-sub { font-size: 0.8em; color: #888; }
-        
         .stock-values { text-align: right; }
         .stock-price { font-weight: bold; font-size: 1.1em; display: block; }
         .stock-change { font-size: 0.85em; font-weight: bold; }
         
-        /* 색상 클래스 */
         .up { color: #ff6b6b; }   /* 빨강 (상승) */
         .down { color: #4dabf7; } /* 파랑 (하락) */
         .flat { color: #ccc; }    /* 보합 */
@@ -42,7 +40,21 @@
         .update-time { text-align: center; font-size: 0.8em; color: #555; margin-bottom: 20px; }
         .status-msg { text-align: center; color: #666; font-size: 0.9em; padding: 20px; }
 
-        /* 수현 탭 버튼 수정 */
+        /* [수정] 뉴스 링크 색상 강제 고정 (파란색/보라색 방지) */
+        .news-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #333; }
+        
+        /* 링크 상태 상관없이 무조건 흰색/회색 유지 */
+        a.news-link, a.news-link:visited, a.news-link:hover, a.news-link:active {
+            color: #e9ecef !important; /* 강제 흰색 */
+            text-decoration: none; 
+            display: block; 
+        }
+        
+        .news-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7em; margin-bottom: 6px; background: #e03131; color: white; font-weight: bold; }
+        .news-title { font-size: 1.05em; font-weight: bold; margin-bottom: 5px; color: #e9ecef; }
+        .ai-analysis { font-size: 0.8em; color: #888; display: flex; align-items: center; }
+
+        /* 수현 탭 버튼 */
         .suhyun-box { text-align: center; padding: 30px 10px; }
         .chat-link-btn { display: inline-block; background: linear-gradient(45deg, #d63384, #ae3ec9); color: white; padding: 15px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1em; box-shadow: 0 4px 15px rgba(214, 51, 132, 0.4); cursor: pointer; }
     </style>
@@ -115,10 +127,9 @@
                 <div style="font-size: 3em; margin-bottom: 15px;">✨</div>
                 <p style="color: #adb5bd; margin-bottom: 25px;">
                     사장님, 투자 고민이 있으신가요?<br>
-                    시장 분석부터 멘탈 관리까지,<br>
-                    제가 도와드리겠습니다.
+                    버튼을 누르면 바로 이동합니다.
                 </p>
-                <div class="chat-link-btn" onclick="window.open('https://gemini.google.com/app', '_blank')">
+                <div class="chat-link-btn" onclick="goSuhyun()">
                     수현이와 대화하기 ➤
                 </div>
             </div>
@@ -126,11 +137,16 @@
     </div>
 
     <script>
-        // 사장님의 CSV 주소 (그대로 유지)
+        // 사장님의 CSV 주소 (유지)
         const STOCK_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRCRj74JyE0gUyQs4yWYXg__QxuOYpDiegz8W50mvORtk5x9I_KMYtZJOYwYOWpp6bZhPFBkQmmvc6/pub?gid=2144469712&single=true&output=csv";
         const NEWS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRCRj74JyE0gUyQs4yWYXg__QxuOYpDiegz8W50mvORtk5x9I_KMYtZJOYwYOWpp6bZhPFBkQmmvc6/pub?gid=0&single=true&output=csv";
         
         let currentStockTotal = 0;
+
+        // [수정] 수현 탭 이동 함수 (강제 이동)
+        function goSuhyun() {
+            window.location.href = "https://gemini.google.com/app";
+        }
 
         function loadSavedAssets() {
             let estate = localStorage.getItem('myEstate') || "0";
@@ -201,7 +217,6 @@
             });
         }
 
-        // [핵심] 주식 목록 그리기 (등락률 로직 추가됨)
         function renderStocks(rows) {
             const list = document.getElementById('stockList');
             list.innerHTML = "";
@@ -210,22 +225,19 @@
             rows.slice(1).forEach(row => {
                 if(row.length < 3) return;
                 
-                // 데이터 파싱
                 const name = row[0];
                 const price = parseFloat((row[2] || "0").replace(/,/g, '')); 
                 const count = parseFloat((row[3] || "0").replace(/,/g, ''));
-                // E열(등락률) 가져오기, 없으면 0
                 const changeStr = row[4] || "0"; 
                 const change = parseFloat(changeStr.replace('%', ''));
 
                 if (name && price > 0) {
                     totalVal += price * count;
 
-                    // 등락률에 따른 색상 및 부호 결정
                     let colorClass = "flat";
                     let sign = "";
                     if (change > 0) { colorClass = "up"; sign = "+"; }
-                    if (change < 0) { colorClass = "down"; sign = ""; } // -는 숫자에 포함됨
+                    if (change < 0) { colorClass = "down"; sign = ""; }
 
                     list.innerHTML += `
                         <div class="stock-item">
@@ -254,6 +266,7 @@
                 if (title.length > 40) title = title.substring(0, 40) + "...";
                 if (!link) link = "#";
 
+                // [수정] a 태그에 클래스 확실하게 적용
                 list.innerHTML += `
                     <div class="news-item">
                         <a href="${link}" target="_blank" class="news-link">
