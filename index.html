@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>나의주식비서 (Ver 3.7)</title>
+    <title>나의주식비서 (Ver 4.3)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* 기본 스타일 */
@@ -11,12 +11,11 @@
         h1 { text-align: center; color: #4dabf7; margin-bottom: 20px; font-weight: 800; }
         
         /* 탭 메뉴 */
-        .tab-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
-        .tab-btn { background: #1e1e1e; border: 1px solid #333; color: #888; padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: 0.3s; font-size: 0.9em; }
+        .tab-container { display: flex; justify-content: center; gap: 6px; margin-bottom: 25px; flex-wrap: wrap; }
+        .tab-btn { background: #1e1e1e; border: 1px solid #333; color: #888; padding: 8px 12px; border-radius: 20px; cursor: pointer; transition: 0.3s; font-size: 0.85em; }
         .tab-btn.active { background: #4dabf7; color: #000; font-weight: bold; border-color: #4dabf7; }
-        .tab-btn.suhyun-btn { border-color: #d63384; color: #d63384; }
-        .tab-btn.suhyun-btn.active { background: #d63384; color: #fff; }
-
+        
+        /* 카드 스타일 */
         .card { background-color: #1c1c1e; border-radius: 18px; padding: 20px; margin-bottom: 15px; border: 1px solid #333; }
         .card-header { font-size: 1.1em; font-weight: bold; margin-bottom: 15px; color: #ced4da; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         
@@ -40,23 +39,15 @@
         .update-time { text-align: center; font-size: 0.8em; color: #555; margin-bottom: 20px; }
         .status-msg { text-align: center; color: #666; font-size: 0.9em; padding: 20px; }
 
-        /* [수정] 뉴스 링크 색상 강제 고정 (파란색/보라색 방지) */
+        /* 뉴스 스타일 */
         .news-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #333; }
-        
-        /* 링크 상태 상관없이 무조건 흰색/회색 유지 */
-        a.news-link, a.news-link:visited, a.news-link:hover, a.news-link:active {
-            color: #e9ecef !important; /* 강제 흰색 */
-            text-decoration: none; 
-            display: block; 
-        }
-        
+        a.news-link, a.news-link:visited, a.news-link:hover, a.news-link:active { color: #e9ecef !important; text-decoration: none; display: block; }
         .news-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7em; margin-bottom: 6px; background: #e03131; color: white; font-weight: bold; }
         .news-title { font-size: 1.05em; font-weight: bold; margin-bottom: 5px; color: #e9ecef; }
         .ai-analysis { font-size: 0.8em; color: #888; display: flex; align-items: center; }
 
-        /* 수현 탭 버튼 */
-        .suhyun-box { text-align: center; padding: 30px 10px; }
-        .chat-link-btn { display: inline-block; background: linear-gradient(45deg, #d63384, #ae3ec9); color: white; padding: 15px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1em; box-shadow: 0 4px 15px rgba(214, 51, 132, 0.4); cursor: pointer; }
+        /* 위젯 컨테이너 */
+        .widget-container { height: 400px; width: 100%; border-radius: 10px; overflow: hidden; }
     </style>
 </head>
 <body>
@@ -65,8 +56,9 @@
 
     <div class="tab-container">
         <button class="tab-btn active" onclick="openTab('dashboard')">자산현황</button>
+        <button class="tab-btn" onclick="openTab('korea')">🇰🇷 한국증시</button>
+        <button class="tab-btn" onclick="openTab('usa')">🇺🇸 미국증시</button>
         <button class="tab-btn" onclick="openTab('news')">자동 뉴스</button>
-        <button class="tab-btn suhyun-btn" onclick="openTab('suhyun')">비서 수현</button>
     </div>
 
     <div id="dashboard" class="content">
@@ -103,7 +95,7 @@
 
         <div class="card">
             <div class="card-header">
-                <span>📈 주식/코인 (실시간%)</span>
+                <span>📈 보유 주식 (실시간%)</span>
             </div>
             <div id="stockList">
                 <div class="status-msg">데이터 연결 중...</div>
@@ -111,42 +103,113 @@
         </div>
     </div>
 
+    <div id="korea" class="content" style="display:none;">
+        <div class="card">
+            <div class="card-header">🇰🇷 코스피 / 코스닥</div>
+            <div class="widget-container">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+                    {
+                    "colorTheme": "dark",
+                    "dateRange": "12M",
+                    "showChart": true,
+                    "locale": "kr",
+                    "largeChartUrl": "",
+                    "isTransparent": true,
+                    "showSymbolLogo": true,
+                    "showFloatingTooltip": false,
+                    "width": "100%",
+                    "height": "400",
+                    "plotLineColorGrowing": "rgba(255, 0, 0, 1)",
+                    "plotLineColorFalling": "rgba(0, 0, 255, 1)",
+                    "gridLineColor": "rgba(240, 243, 250, 0)",
+                    "scaleFontColor": "rgba(209, 212, 220, 1)",
+                    "belowLineFillColorGrowing": "rgba(41, 98, 255, 0.12)",
+                    "belowLineFillColorFalling": "rgba(41, 98, 255, 0.12)",
+                    "belowLineFillColorGrowingBottom": "rgba(41, 98, 255, 0)",
+                    "belowLineFillColorFallingBottom": "rgba(41, 98, 255, 0)",
+                    "symbolActiveColor": "rgba(41, 98, 255, 0.12)",
+                    "tabs": [
+                        {
+                        "title": "지수",
+                        "symbols": [
+                            { "s": "KRX:KOSPI", "d": "코스피" },
+                            { "s": "KRX:KOSDAQ", "d": "코스닥" },
+                            { "s": "KRX:USDKRW", "d": "원달러 환율" }
+                        ]
+                        }
+                    ]
+                    }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="usa" class="content" style="display:none;">
+        <div class="card">
+            <div class="card-header">🇺🇸 나스닥 / S&P500</div>
+            <div class="widget-container">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+                    {
+                    "colorTheme": "dark",
+                    "dateRange": "12M",
+                    "showChart": true,
+                    "locale": "kr",
+                    "largeChartUrl": "",
+                    "isTransparent": true,
+                    "showSymbolLogo": true,
+                    "showFloatingTooltip": false,
+                    "width": "100%",
+                    "height": "400",
+                    "plotLineColorGrowing": "rgba(255, 0, 0, 1)",
+                    "plotLineColorFalling": "rgba(0, 0, 255, 1)",
+                    "gridLineColor": "rgba(240, 243, 250, 0)",
+                    "scaleFontColor": "rgba(209, 212, 220, 1)",
+                    "belowLineFillColorGrowing": "rgba(41, 98, 255, 0.12)",
+                    "belowLineFillColorFalling": "rgba(41, 98, 255, 0.12)",
+                    "belowLineFillColorGrowingBottom": "rgba(41, 98, 255, 0)",
+                    "belowLineFillColorFallingBottom": "rgba(41, 98, 255, 0)",
+                    "symbolActiveColor": "rgba(41, 98, 255, 0.12)",
+                    "tabs": [
+                        {
+                        "title": "지수",
+                        "symbols": [
+                            { "s": "NASDAQ:NDX", "d": "나스닥 100" },
+                            { "s": "FOREXCOM:SPXUSD", "d": "S&P 500" },
+                            { "s": "NASDAQ:TSLA", "d": "테슬라" },
+                            { "s": "NASDAQ:NVDA", "d": "엔비디아" }
+                        ]
+                        }
+                    ]
+                    }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="news" class="content" style="display:none;">
         <div class="card">
-            <div class="card-header">📰 실시간 속보</div>
+            <div class="card-header">
+                <span>📰 실시간 속보</span>
+                <span style="font-size: 0.7em; color: #888;">(1시간마다 자동갱신)</span>
+            </div>
             <div id="newsList">
                 <div class="status-msg">뉴스를 불러오고 있습니다...</div>
             </div>
         </div>
     </div>
 
-    <div id="suhyun" class="content" style="display:none;">
-        <div class="card">
-            <div class="card-header">👩‍💼 수현 (AI 비서)</div>
-            <div class="suhyun-box">
-                <div style="font-size: 3em; margin-bottom: 15px;">✨</div>
-                <p style="color: #adb5bd; margin-bottom: 25px;">
-                    사장님, 투자 고민이 있으신가요?<br>
-                    버튼을 누르면 바로 이동합니다.
-                </p>
-                <div class="chat-link-btn" onclick="goSuhyun()">
-                    수현이와 대화하기 ➤
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // 사장님의 CSV 주소 (유지)
+        // 사장님의 CSV 주소
         const STOCK_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRCRj74JyE0gUyQs4yWYXg__QxuOYpDiegz8W50mvORtk5x9I_KMYtZJOYwYOWpp6bZhPFBkQmmvc6/pub?gid=2144469712&single=true&output=csv";
         const NEWS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRCRj74JyE0gUyQs4yWYXg__QxuOYpDiegz8W50mvORtk5x9I_KMYtZJOYwYOWpp6bZhPFBkQmmvc6/pub?gid=0&single=true&output=csv";
         
         let currentStockTotal = 0;
-
-        // [수정] 수현 탭 이동 함수 (강제 이동)
-        function goSuhyun() {
-            window.location.href = "https://gemini.google.com/app";
-        }
 
         function loadSavedAssets() {
             let estate = localStorage.getItem('myEstate') || "0";
@@ -162,7 +225,7 @@
             let key = type === 'estate' ? 'myEstate' : (type === 'cash' ? 'myCash' : 'myOther');
             let label = type === 'other' ? "기타 자산" : "금액";
             let newVal = prompt(label + "을 입력하세요 (숫자만)", localStorage.getItem(key) || "0");
-
+            
             if (newVal !== null && !isNaN(newVal) && newVal.trim() !== "") {
                 localStorage.setItem(key, newVal);
                 loadSavedAssets();
@@ -187,7 +250,10 @@
         }
 
         async function loadData(force = false) {
+            // [수정] 강제 새로고침 시 타임스탬프를 추가해 브라우저 캐시 무시
             const timeStamp = force ? "&t=" + Date.now() : "";
+            
+            // 1. 주식 데이터
             try {
                 const res = await fetch(STOCK_URL + timeStamp);
                 const text = await res.text();
@@ -198,6 +264,8 @@
             } catch (e) {
                 document.getElementById('stockList').innerHTML = '<div class="status-msg">⚠️ 주식 데이터 연결 실패</div>';
             }
+
+            // 2. 뉴스 데이터
             try {
                 const res = await fetch(NEWS_URL + timeStamp);
                 const text = await res.text();
@@ -260,13 +328,19 @@
         function renderNews(rows) {
             const list = document.getElementById('newsList');
             list.innerHTML = "";
+            
+            // [수정] 뉴스 갯수 제한 (최신 10개만 표시 등) 및 데이터 확인
+            let count = 0;
             rows.forEach(row => {
+                if (count >= 15) return; // 15개까지만 표시
+
                 let title = row[0]; let link = row[1];
                 if (!title || title === "items title" || title === "태그") return;
+                
                 if (title.length > 40) title = title.substring(0, 40) + "...";
                 if (!link) link = "#";
 
-                // [수정] a 태그에 클래스 확실하게 적용
+                count++;
                 list.innerHTML += `
                     <div class="news-item">
                         <a href="${link}" target="_blank" class="news-link">
@@ -299,8 +373,16 @@
             event.target.classList.add('active');
         }
 
+        // 초기 실행
         loadSavedAssets();
         loadData();
+
+        // [중요] 1시간(3600초 * 1000ms)마다 뉴스 및 데이터 자동 새로고침 타이머
+        setInterval(() => {
+            console.log("자동 업데이트 실행됨");
+            loadData(true);
+        }, 3600000);
+
     </script>
 </body>
 </html>
