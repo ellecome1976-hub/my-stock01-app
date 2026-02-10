@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>나의주식비서 (Ver 4.3)</title>
+    <title>나의주식비서 (Ver 4.4)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* 기본 스타일 */
@@ -46,8 +46,20 @@
         .news-title { font-size: 1.05em; font-weight: bold; margin-bottom: 5px; color: #e9ecef; }
         .ai-analysis { font-size: 0.8em; color: #888; display: flex; align-items: center; }
 
-        /* 위젯 컨테이너 */
-        .widget-container { height: 400px; width: 100%; border-radius: 10px; overflow: hidden; }
+        /* [핵심 수정] 위젯 컨테이너: 터치/클릭 원천 차단 (단순 뷰어 모드) */
+        .widget-wrapper {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            pointer-events: none; /* 여기가 핵심: 모든 터치 이벤트를 무시합니다 */
+        }
+        /* 혹시 모를 클릭 방지용 투명 커버 */
+        .click-blocker {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -106,8 +118,8 @@
     <div id="korea" class="content" style="display:none;">
         <div class="card">
             <div class="card-header">🇰🇷 코스피 / 코스닥</div>
-            <div class="widget-container">
-                <div class="tradingview-widget-container">
+            <div class="widget-wrapper">
+                <div class="click-blocker"></div> <div class="tradingview-widget-container">
                     <div class="tradingview-widget-container__widget"></div>
                     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
                     {
@@ -144,14 +156,17 @@
                     </script>
                 </div>
             </div>
+            <div style="text-align:center; font-size:0.8em; color:#555; margin-top:10px;">
+                * 실시간 시세판입니다. (보기 전용)
+            </div>
         </div>
     </div>
 
     <div id="usa" class="content" style="display:none;">
         <div class="card">
             <div class="card-header">🇺🇸 나스닥 / S&P500</div>
-            <div class="widget-container">
-                <div class="tradingview-widget-container">
+            <div class="widget-wrapper">
+                <div class="click-blocker"></div> <div class="tradingview-widget-container">
                     <div class="tradingview-widget-container__widget"></div>
                     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
                     {
@@ -188,6 +203,9 @@
                     }
                     </script>
                 </div>
+            </div>
+            <div style="text-align:center; font-size:0.8em; color:#555; margin-top:10px;">
+                * 실시간 시세판입니다. (보기 전용)
             </div>
         </div>
     </div>
@@ -250,7 +268,6 @@
         }
 
         async function loadData(force = false) {
-            // [수정] 강제 새로고침 시 타임스탬프를 추가해 브라우저 캐시 무시
             const timeStamp = force ? "&t=" + Date.now() : "";
             
             // 1. 주식 데이터
@@ -329,10 +346,9 @@
             const list = document.getElementById('newsList');
             list.innerHTML = "";
             
-            // [수정] 뉴스 갯수 제한 (최신 10개만 표시 등) 및 데이터 확인
             let count = 0;
             rows.forEach(row => {
-                if (count >= 15) return; // 15개까지만 표시
+                if (count >= 15) return; 
 
                 let title = row[0]; let link = row[1];
                 if (!title || title === "items title" || title === "태그") return;
@@ -373,11 +389,10 @@
             event.target.classList.add('active');
         }
 
-        // 초기 실행
         loadSavedAssets();
         loadData();
 
-        // [중요] 1시간(3600초 * 1000ms)마다 뉴스 및 데이터 자동 새로고침 타이머
+        // 1시간마다 자동 갱신
         setInterval(() => {
             console.log("자동 업데이트 실행됨");
             loadData(true);
